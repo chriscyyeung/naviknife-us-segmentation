@@ -1,0 +1,3 @@
+[submodule "external/nnUNet"]
+	path = external/nnUNet
+	url = git@github.com:MIC-DKFZ/nnUNet.git
