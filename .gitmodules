@@ -1,3 +1,6 @@
 [submodule "external/nnUNet"]
 	path = external/nnUNet
 	url = git@github.com:MIC-DKFZ/nnUNet.git
+[submodule "external/OpenUS"]
+	path = external/OpenUS
+	url = git@github.com:XZheng0427/OpenUS.git
