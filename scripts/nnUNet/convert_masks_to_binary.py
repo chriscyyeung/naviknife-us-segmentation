@@ -17,6 +17,10 @@ expected and correct for nnU-Net label maps (only the numeric values
 matter, not visual appearance).
 
 Files are written to a NEW output folder; originals are untouched.
+
+Note: Source files were changed to bool, so this script is now outdated.
+Conversion should now only require converting uint8 without thresholding 
+(implemented but not tested).
 """
 
 from pathlib import Path
@@ -27,7 +31,6 @@ from PIL import Image
 # ---- CONFIG ----------------------------------------------------------
 SOURCE_FOLDER = Path("/home/cyeung/projects/aip-medilab/cyeung/LumpNavPNGResMatched/masks")
 DEST_FOLDER = Path("/home/cyeung/projects/aip-medilab/cyeung/nnUNet_raw/Dataset067_LumpNav/labelsTr")
-THRESHOLD = 128     # pixel values above this become class 1, else 0
 # -----------------------------------------------------------------------
 
 
@@ -47,10 +50,10 @@ def main():
 
     for src in png_files:
         try:
-            mask = np.array(Image.open(src).convert("L"))
+            mask = np.array(Image.open(src))
             unique_values_seen.update(np.unique(mask).tolist())
 
-            binary_mask = (mask > THRESHOLD).astype(np.uint8)
+            binary_mask = mask.astype(np.uint8)
 
             if binary_mask.max() == 0:
                 empty_masks += 1
