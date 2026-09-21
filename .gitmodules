@@ -6,4 +6,4 @@
 	url = git@github.com:chriscyyeung/OpenUS.git
 [submodule "external/UltraSam"]
 	path = external/UltraSam
-	url = git@github.com:CAMMA-public/UltraSam.git
+	url = git@github.com:chriscyyeung/UltraSam.git
