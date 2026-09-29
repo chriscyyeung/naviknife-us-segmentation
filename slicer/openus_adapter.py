@@ -6,6 +6,7 @@ fine-tuned with 5-fold cross-validation, ensembled at inference time.
 import os
 import re
 import sys
+import glob
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -13,7 +14,7 @@ from PIL import Image
 
 
 # ---- Configuration -- adjust these for your environment/checkpoint layout ----
-OPENUS_REPO_DIR = "c:/Users/chris/Repos/naviknife-us-segmentation/external/OpenUS"
+OPENUS_REPO_DIR = "/home/chris/projects/naviknife-us-segmentation/external/OpenUS"
 PRETRAINED_VMAMBA = "vmamba/vssm_small_0229_ckpt_epoch_222.pth"
 BACKBONE_CHECKPOINT_NAME = "openus_cpt0150.pth"
 BACKBONE_CHECKPOINT_KEY = "teacher"   # key inside the backbone checkpoint dict
@@ -24,17 +25,27 @@ INPUT_SIZE = 224  # exposed for the module's optional metadata convention
 
 
 def _get_fold_head_checkpoints(model_dir):
-    """Mirrors the nnU-Net fold-discovery helper: find fold_N subfolders,
-    each expected to contain a head checkpoint."""
+    """Mirrors the nnU-Net fold-discovery helper: find fold_N folders anywhere
+    under model_dir (not just directly inside it -- e.g. model_dir/pretrained/
+    LumpNav_FT/fold_0/...), each expected to contain a head checkpoint."""
     fold_checkpoints = {}
-    for entry in os.listdir(model_dir):
-        full_path = os.path.join(model_dir, entry)
-        match = re.fullmatch(r"fold_(\d+)", entry)
-        if not match or not os.path.isdir(full_path):
+    fold_dirs = glob.glob(os.path.join(model_dir, "**", "fold_*"), recursive=True)
+    for full_path in fold_dirs:
+        if not os.path.isdir(full_path):
+            continue
+        match = re.fullmatch(r"fold_(\d+)", os.path.basename(full_path))
+        if not match:
             continue
         ckpt_path = os.path.join(full_path, HEAD_CHECKPOINT_NAME)
         if os.path.isfile(ckpt_path):
-            fold_checkpoints[int(match.group(1))] = ckpt_path
+            fold_num = int(match.group(1))
+            if fold_num in fold_checkpoints:
+                raise ValueError(
+                    f"Found more than one fold_{fold_num} checkpoint under {model_dir}: "
+                    f"{fold_checkpoints[fold_num]} and {ckpt_path}. "
+                    "Remove or rename the duplicate so folds are unambiguous."
+                )
+            fold_checkpoints[fold_num] = ckpt_path
     return dict(sorted(fold_checkpoints.items()))
 
 
@@ -121,35 +132,42 @@ def predict(model, input_array, device):
     backbone = model["backbone"]
     heads = model["heads"]
     transform = model["transform"]
-
+ 
     frame = input_array[0]  # current frame, (H, W)
     orig_h, orig_w = frame.shape
-
+ 
     # Grayscale -> 3-channel uint8 PIL image, since the backbone is ImageNet/DINO-style
     # pretrained and get_transforms' pipeline expects a PIL Image as input.
     frame_uint8 = np.clip(frame, 0, 255).astype(np.uint8) if frame.max() > 1.5 else \
         np.clip(frame * 255.0, 0, 255).astype(np.uint8)
     rgb_frame = np.stack([frame_uint8, frame_uint8, frame_uint8], axis=-1)  # (H, W, 3)
     pil_image = Image.fromarray(rgb_frame)
-
-    input_tensor = transform(pil_image).unsqueeze(0).to(device)  # (1, 3, 224, 224)
-
+ 
+    # val_transform(image, mask) requires a mask argument (its resize() step
+    # uses NEAREST interpolation for the mask vs. the default for the image,
+    # and needs both present to keep them in sync) -- there's no real mask at
+    # inference, so pass a same-size placeholder and discard the transformed
+    # copy of it; only the image tensor is used below.
+    dummy_mask = Image.fromarray(np.zeros((orig_h, orig_w), dtype=np.uint8), mode="L")
+    input_tensor, _ = transform(pil_image, dummy_mask)
+    input_tensor = input_tensor.unsqueeze(0).to(device)  # (1, 3, 224, 224)
+ 
     with torch.inference_mode():
         encoder_out = backbone(input_tensor)
-
+ 
         fold_probs = []
         for head in heads:
             logits = head(encoder_out, orig_hw=input_tensor.shape[2:])          # (1, num_classes, 224, 224)
             probs = torch.softmax(logits, dim=1)[0, FOREGROUND_CLASS_INDEX]     # (224, 224)
             fold_probs.append(probs)
-
+ 
         ensembled_probs = torch.stack(fold_probs, dim=0).mean(dim=0)  # soft-vote average across folds
-
+ 
         # Resize the 224x224 prediction back up to the original frame resolution
         ensembled_probs = ensembled_probs.unsqueeze(0).unsqueeze(0)  # (1, 1, 224, 224)
         ensembled_probs = F.interpolate(
             ensembled_probs, size=(orig_h, orig_w), mode="bilinear", align_corners=False
         )
         output_array = ensembled_probs.squeeze(0).squeeze(0).cpu().numpy()
-
+ 
     return output_array.astype(np.float32)
