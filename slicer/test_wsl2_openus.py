@@ -47,7 +47,7 @@ if __name__ == "__main__":
     print("Server health:", check_server_health())
 
     # Quick end-to-end test with one of your existing frames
-    test_image_path = "LumpNavPNGResMatched/images/LN003_frame00000.png"
+    test_image_path = r"d:\PerkLab\UltrasoundSegmentation\Breast\LumpNavPNGResMatched\images\LN003_frame00000.png"
     arr = np.array(Image.open(test_image_path).convert("RGB"))
 
     mask = predict(arr)
