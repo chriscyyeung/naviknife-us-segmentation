@@ -7,3 +7,6 @@
 [submodule "external/UltraSam"]
 	path = external/UltraSam
 	url = git@github.com:chriscyyeung/UltraSam.git
+[submodule "external/INSID3"]
+	path = external/INSID3
+	url = git@github.com:visinf/INSID3.git
