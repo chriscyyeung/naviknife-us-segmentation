@@ -38,6 +38,7 @@ echo "RANK=$SLURM_PROCID LOCAL_RANK=$SLURM_LOCALID HOST=$(hostname) MASTER=$MAST
 # Run training
 # ----------------------------
 
+module load gcc cuda/12.9
 module load gcc opencv
 
 source /home/cyeung/projects/aip-medilab/cyeung/venv/bin/activate
@@ -54,7 +55,6 @@ srun python eval_segmentation.py \
     --dataset_name LumpNav \
     --data_root $SLURM_TMPDIR/fold_4 \
     --fold 4 \
-    --epochs 10 \
     --num_workers 8 \
     --pretrained_vmamba True \
     --pretrained_weights /home/cyeung/projects/aip-medilab/cyeung/naviknife-us-segmentation/external/OpenUS/pretrained/openus_cpt0150.pth \
