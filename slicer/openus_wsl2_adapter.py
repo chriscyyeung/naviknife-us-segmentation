@@ -23,7 +23,7 @@ import numpy as np
 import requests
 from PIL import Image
 
-SERVER_URL = "http://localhost:8000"
+SERVER_URL = "http://127.0.0.1:8000"
 HEALTH_CHECK_TIMEOUT = 5       # seconds; load_model() fails fast if the server isn't up
 PREDICT_TIMEOUT = 10           # seconds; generous for a single frame, but not so long
                                 # it freezes the Slicer UI if the server hangs
