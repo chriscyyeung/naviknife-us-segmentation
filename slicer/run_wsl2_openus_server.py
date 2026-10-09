@@ -54,6 +54,11 @@ def load_model_once():
     model = load_openus_model(MODEL_DIR, DEVICE)
     print("Model loaded.")
 
+    print("Warming up (first run compiles Triton kernels)...")
+    dummy = np.zeros((1, 615, 525), dtype=np.float32)  # use your real frame size
+    predict_openus(model, dummy, DEVICE)
+    print("Warmup done.")
+
 
 def run_inference(image_arr: np.ndarray) -> np.ndarray:
     """Run the model on a single image, return the ensembled foreground
