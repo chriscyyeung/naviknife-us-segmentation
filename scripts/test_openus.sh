@@ -33,6 +33,7 @@ export NCCL_MIN_CHANNELS=32
 # Run training
 # ----------------------------
 
+module load gcc cuda/12.9
 module load gcc opencv
 
 source /home/cyeung/projects/aip-medilab/cyeung/venv/bin/activate
