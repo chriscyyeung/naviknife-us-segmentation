@@ -9,4 +9,4 @@
 	url = git@github.com:chriscyyeung/UltraSam.git
 [submodule "external/INSID3"]
 	path = external/INSID3
-	url = git@github.com:visinf/INSID3.git
+	url = git@github.com:chriscyyeung/INSID3.git
