@@ -68,7 +68,8 @@ def _install_dependencies():
     missing = []
     for module, package in (("einops", "einops"), ("sklearn", "scikit-learn"),
                             ("pycocotools", "pycocotools"), ("torchvision", "torchvision"),
-                            ("torchmetrics", "torchmetrics")):  # torchmetrics: DINOv3 hubconf
+                            ("torchmetrics", "torchmetrics"), ("termcolor", "termcolor")):
+        # torchmetrics and termcolor are imported by DINOv3's hubconf, not by INSID3 itself
         try:
             __import__(module)
         except ImportError:
@@ -263,8 +264,8 @@ def predict(model, input_array, device):
         raise ValueError(f"Expected a 2D frame, got shape {frame.shape} (input {input_array.shape})")
     orig_hw = frame.shape
 
-    # Same convention as the OpenUS adapter: raw 0-255 intensities expected (keep the
-    # module's "Normalize" toggle OFF); 0-1 input is rescaled.
+    # Works with the module's "Normalize" toggle on or off: it divides by 255, and 0-1
+    # input is scaled back to 0-255 here (off avoids a possible 1-grey-level rounding).
     frame_uint8 = np.clip(frame, 0, 255).astype(np.uint8) if frame.max() > 1.5 else \
         np.clip(frame * 255.0, 0, 255).astype(np.uint8)
     pil_image = Image.fromarray(np.stack([frame_uint8] * 3, axis=-1))

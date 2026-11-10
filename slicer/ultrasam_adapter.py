@@ -186,7 +186,7 @@ def predict(model, input_array, device):
         raise ValueError(f"Expected a 2D frame, got shape {frame.shape} (input {input_array.shape})")
     h, w = frame.shape
 
-    # Raw 0-255 intensities expected (module's "Normalize" toggle OFF); 0-1 input is rescaled.
+    # "Normalize" on or off both work: 0-1 input (module divides by 255) is scaled back to 0-255.
     frame_uint8 = np.clip(frame, 0, 255).astype(np.uint8) if frame.max() > 1.5 else \
         np.clip(frame * 255.0, 0, 255).astype(np.uint8)
     image = np.ascontiguousarray(np.stack([frame_uint8] * 3, axis=-1))  # grey, so BGR == RGB

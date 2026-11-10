@@ -10,7 +10,8 @@ folder in the module. Start the server first:
     python run_wsl2_adapter_server.py --adapter ultrasam_adapter.py \
         --model-dir /path/to/ultrasam_work_dirs --port 8001
 
-Keep the module's "Normalize" toggle OFF so frames arrive as raw 0-255 intensities.
+The module's "Normalize" toggle can be on or off: it divides by 255, and 0-1 frames
+are scaled back to 0-255 before sending (off avoids a 1-grey-level rounding).
 """
 
 import io
